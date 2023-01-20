@@ -12,6 +12,10 @@ class ApiError {
     return new ApiError(404, message);
   }
 
+  static Forbidden(message) {
+    return new ApiError(403, message);
+  }
+
   static Unauthorized(message) {
     return new ApiError(401, message);
   }

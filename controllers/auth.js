@@ -1,19 +1,16 @@
+const jwt = require("jsonwebtoken");
+const { serialize } = require("cookie");
 const User = require("../models/user.js");
 const Errors = require("../classes/Errors.js");
 const cloudinary = require("../config/cloudinary.js");
-const jwt = require("jsonwebtoken");
-const { sendVerificationEmail } = require("../services/email.js");
+const {
+  sendVerificationEmail,
+  sendResetPasswordEmail,
+} = require("../services/email.js");
 
 const signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
-    /**
-     * TODO: check if all fields are available
-     * TODO: check if username or email already exist
-     * TODO: hash password
-     * TODO: save to DB
-     * TODO: send verification token link
-     */
     if (!username || !email || !password) {
       throw Errors.BadRequest("Please provide all information");
     }
@@ -76,7 +73,81 @@ const verifyAccount = async (req, res, next) => {
     await User.findByIdAndUpdate(payload.id, {
       isVerified: true,
     });
-    return res.json({ message: "Account verified!" });
+    return res.redirect(`${process.env.CLIENT_URL}/auth/login`);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const login = async (req, res, next) => {
+  try {
+    /**
+     * TODO: check the body
+     * TODO: check if user exists
+     * TODO: check if password correct
+     * TODO: check if user is verified
+     * TODO: create & send token (presave func)
+     */
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw Errors.BadRequest("Please fill up all required fields");
+    }
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      throw Errors.NotFound("User with this email doesn't exist");
+    }
+
+    if (!user.isValidPassword(password)) {
+      throw Errors.Unauthorized("Wrong Password");
+    }
+
+    if (!user.isVerified) {
+      throw Errors.Unauthorized(
+        "Please verify your account before getting access"
+      );
+    }
+
+    const accessToken = user.generateToken(
+      user._id,
+      process.env.ACCESS_TOKEN_SECRET,
+      "7d"
+    );
+    const refreshToken = user.generateToken(
+      user._id,
+      process.env.REFRESH_TOKEN_SECRET,
+      "1y"
+    );
+
+    const serialized = serialize(
+      "token",
+      { accessToken, refreshToken },
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 60 * 60 * 24,
+        path: "/",
+      }
+    );
+    res.setHeader("Set-Cookie", serialized);
+
+    return res.json({ accessToken, refreshToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw ApiError.BadRequest("Email is required");
+    const user = await User.findOne({ email });
+    if (!user) throw ApiError.BadRequest("Email was not found");
+    if (!user.isVerified)
+      throw ApiError.BadRequest("Please verify your account first!");
+    await sendResetPasswordEmail(user);
+    res.json({ message: "A reset password link has been sent to your email" });
   } catch (error) {
     next(error);
   }
@@ -85,4 +156,6 @@ const verifyAccount = async (req, res, next) => {
 module.exports = {
   signup,
   verifyAccount,
+  login,
+  forgotPassword,
 };
