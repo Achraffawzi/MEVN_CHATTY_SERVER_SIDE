@@ -58,7 +58,7 @@ const sendResetPasswordEmail = ({ _id, email }) => {
       { userID: _id, email },
       process.env.TOKEN_SECRET,
       {
-        expiresIn: "7d",
+        expiresIn: "2d",
       }
     );
     const url = `${process.env.BASE_URL}/api/auth/resetpassword/${_id}/${emailToken}`;
@@ -75,7 +75,7 @@ const sendResetPasswordEmail = ({ _id, email }) => {
             <br />
             <span style="color: dimgrey;font-family: 'Times New Roman', Times, serif; font-size: 13px;">Thanks,</span>
             <br />
-            <span style="color: dimgrey;font-family: 'Times New Roman', Times, serif; font-size: 13px;">The Chatify team</span>
+            <span style="color: dimgrey;font-family: 'Times New Roman', Times, serif; font-size: 13px;">The Chatty team</span>
           </div>
         </div>
       </body>
@@ -101,4 +101,5 @@ const sendResetPasswordEmail = ({ _id, email }) => {
 
 module.exports = {
   sendVerificationEmail,
+  sendResetPasswordEmail,
 };

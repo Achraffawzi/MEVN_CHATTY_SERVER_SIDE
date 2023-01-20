@@ -141,11 +141,11 @@ const login = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (!email) throw ApiError.BadRequest("Email is required");
+    if (!email) throw Errors.BadRequest("Email is required");
     const user = await User.findOne({ email });
-    if (!user) throw ApiError.BadRequest("Email was not found");
+    if (!user) throw Errors.BadRequest("Email was not found");
     if (!user.isVerified)
-      throw ApiError.BadRequest("Please verify your account first!");
+      throw Errors.BadRequest("Please verify your account first!");
     await sendResetPasswordEmail(user);
     res.json({ message: "A reset password link has been sent to your email" });
   } catch (error) {
