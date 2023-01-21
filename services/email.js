@@ -61,7 +61,7 @@ const sendResetPasswordEmail = ({ _id, email }) => {
         expiresIn: "2d",
       }
     );
-    const url = `${process.env.BASE_URL}/api/auth/resetpassword/${_id}/${emailToken}`;
+    const url = `${process.env.BASE_URL}/api/auth/reset-password/${_id}/${emailToken}`;
 
     const emailTemplate = `
       <body style="background-color: #e8ebeb; font-size: 19px; width: 600px; max-width: 90vw; margin: 0 auto; padding: 3%;">

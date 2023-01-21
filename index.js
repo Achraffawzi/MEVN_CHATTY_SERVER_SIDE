@@ -1,16 +1,24 @@
 const express = require("express");
+const rateLimit = require("express-rate-limit");
+const cors = require("cors");
 const handleErrors = require("./middlewares/errors.js");
 const connectDB = require("./config/db.js");
 
 const app = express();
-require("dotenv").config();
 
-const cors = require("cors");
+// Configuration
+require("dotenv").config();
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Middlewares
 app.use(
   cors({
-    origin: "*", //process.env.CLIENT_URL,
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
   })
 );
 app.use(express.json());

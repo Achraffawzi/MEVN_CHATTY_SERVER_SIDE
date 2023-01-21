@@ -141,6 +141,7 @@ const login = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
+
     if (!email) throw Errors.BadRequest("Email is required");
     const user = await User.findOne({ email });
     if (!user) throw Errors.BadRequest("Email was not found");
@@ -153,9 +154,119 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
+const resetPasswordGET = async (req, res, next) => {
+  try {
+    const { id, token } = req.params;
+    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
+    if (!payload) {
+      throw Errors.Unauthorized("You're unauthorized");
+    }
+    const user = await User.findById(id);
+    if (!user) {
+      throw Errors.BadRequest("You don't have an account");
+    }
+
+    return res.redirect(
+      `${process.env.CLIENT_URL}/auth/resetPassword?id=${user._id}`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resetPasswordPOST = async (req, res, next) => {
+  try {
+    const { password, confirmPassword } = req.body;
+    const { id } = req.params;
+
+    if (!password || !confirmPassword) {
+      return res.json({ message: "Please fill up required fields" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.json({ message: "passwords don't match" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.json({ message: "You don't have an account registered" });
+    }
+
+    const hashedPassword = user.hashPassword(password);
+
+    await User.findByIdAndUpdate(id, { password: hashedPassword });
+
+    return res.json({ message: "Password updated" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logout = (req, res, next) => {
+  try {
+    const { cookies } = req;
+
+    const jwt = cookies.token;
+
+    if (!jwt) {
+      throw Errors.Unauthorized("Unauthorized");
+    }
+
+    const serialized = serialize("token", null, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: -1,
+      path: "/",
+    });
+    res.setHeader("Set-Cookie", serialized);
+    res.status(200).json({
+      message: "Logged out",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const changePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword, id } = req.body;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      throw Errors.BadRequest("please provide the required fields");
+    }
+
+    if (newPassword !== confirmPassword) {
+      throw Errors.BadRequest("passwords don't match");
+    }
+
+    let user = await User.findById(id);
+
+    if (!user) {
+      throw Errors.NotFound("User not found");
+    }
+
+    if (!user.isValidPassword(oldPassword)) {
+      throw Errors.BadRequest("Old password is incorrect");
+    }
+
+    const hashedPassword = await user.hashPassword(newPassword);
+
+    await User.findByIdAndUpdate(id, { password: hashedPassword });
+
+    res.status(200).json({ message: "password changed" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   signup,
   verifyAccount,
   login,
   forgotPassword,
+  resetPasswordGET,
+  resetPasswordPOST,
+  logout,
+  changePassword,
 };

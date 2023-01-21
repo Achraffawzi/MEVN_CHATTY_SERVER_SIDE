@@ -51,6 +51,10 @@ userSchema.methods.isValidPassword = function (password) {
   return bcrypt.compareSync(password, this.password);
 };
 
+userSchema.methods.hashPassword = function (password) {
+  return bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+};
+
 userSchema.methods.generateToken = function (payload, secret, expiration) {
   return jwt.sign({ ...payload }, secret, { expiresIn: expiration });
 };
