@@ -6,7 +6,7 @@ module.exports = connectDB = () => {
   return new Promise((resolve, reject) => {
     mongoose
       .connect(
-        process.env.MONGO_URI || `mongodb://localhost:27017/${DATABASE_NAME}`,
+        process.env.MONGO_URI || `mongodb://0.0.0.0:27017/${DATABASE_NAME}`,
         {
           useNewUrlParser: true,
           useUnifiedTopology: true,

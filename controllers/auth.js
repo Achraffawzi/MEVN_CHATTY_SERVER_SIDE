@@ -260,6 +260,26 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+const changeEmailGET = async (req, res, next) => {
+  try {
+    const { id, token } = req.params;
+    const payload = jwt.verify(token, process.env.TOKEN_SECRET);
+    if (!payload) {
+      throw Errors.Unauthorized("You're unauthorized");
+    }
+    const user = await User.findById(id);
+    if (!user) {
+      throw Errors.BadRequest("You don't have an account");
+    }
+
+    return res.redirect(
+      `${process.env.CLIENT_URL}/auth/changeEmail?id=${user._id}`
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   signup,
   verifyAccount,
@@ -269,4 +289,5 @@ module.exports = {
   resetPasswordPOST,
   logout,
   changePassword,
+  changeEmailGET,
 };
