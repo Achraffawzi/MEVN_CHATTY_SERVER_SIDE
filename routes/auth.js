@@ -11,6 +11,7 @@ const {
   logout,
   changePassword,
   changeEmailGET,
+  changeEmailPOST,
 } = require("../controllers/auth.js");
 const upload = require("../config/multer.js");
 
@@ -23,5 +24,6 @@ router.put("/reset-password/:id", resetPasswordPOST);
 router.delete("/logout", logout);
 router.put("/change-password", changePassword);
 router.get("/change-email/:id/:token", changeEmailGET);
+router.post("/change-email/:id", changeEmailPOST);
 
 module.exports = router;

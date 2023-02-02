@@ -280,6 +280,37 @@ const changeEmailGET = async (req, res, next) => {
   }
 };
 
+const changeEmailPOST = async (req, res, next) => {
+  try {
+    /**
+     * TODO: check the email and id
+     * TODO: check if email already exists
+     * TODO: update email
+     * TODO: logout
+     * TODO: redirect to login page
+     */
+
+    const { email } = req.body;
+    const { id } = req.params;
+
+    if (!email || !id) {
+      throw Errors.BadRequest("Please provide all information");
+    }
+
+    let user = await User.findOne({ email });
+
+    if (user) {
+      throw Errors.Forbidden("A user with this email already exist");
+    }
+
+    await User.findByIdAndUpdate(id, { email });
+
+    return res.redirect(`${process.env.CLIENT_URL}/auth/login`);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   signup,
   verifyAccount,
@@ -290,4 +321,5 @@ module.exports = {
   logout,
   changePassword,
   changeEmailGET,
+  changeEmailPOST,
 };
