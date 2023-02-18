@@ -1,9 +1,9 @@
 const User = require("../models/user.js");
 const Errors = require("../classes/Errors.js");
-const { sendNewEmailVerification } = require("../services/email.js");
+
 const cloudinary = require("../config/cloudinary.js");
 
-const updateUser = async (req, res, next) => {
+const updateUsername = async (req, res, next) => {
   /**
    * TODO: check the body
    * TODO: check if username (or email) already exists
@@ -12,38 +12,26 @@ const updateUser = async (req, res, next) => {
    */
 
   try {
-    const { username, email } = req.body;
-    const { id } = req.params;
+    const { username } = req.body;
+    // const { id } = req.params;
+    const id = req.session.userID;
 
-    if (!username && !email) {
-      throw Errors.BadRequest(
-        "Please provide the information you want to update"
-      );
+    if (!username) {
+      throw Errors.BadRequest("Please provide the new username");
     }
 
     let user = await User.findOne({
-      $or: [{ email }, { username }],
+      username,
     });
 
     if (user) {
-      throw Errors.Forbidden(
-        "A user with the provided information already exists"
-      );
+      throw Errors.Forbidden("A user with this username already exists");
     }
 
     user = await User.findByIdAndUpdate(id, { username });
 
-    if (!user) {
-      throw Errors.NotFound("The user is not found");
-    }
-
-    if (email) {
-      await sendNewEmailVerification(user);
-    }
-
     return res.json({
-      message:
-        "username updated! We've sent you a verification link to your Email",
+      message: "username updated.",
     });
   } catch (error) {
     next(error);
@@ -58,7 +46,8 @@ const updateProfilePicture = async (req, res, next) => {
      * TODO: delete image from cloudinary & add the new one
      */
 
-    const { id } = req.params;
+    // const { id } = req.params;
+    const id = req.session.userID;
 
     if (!req.file) {
       throw Errors.BadRequest("please provide a profile picture");
@@ -95,6 +84,6 @@ const updateProfilePicture = async (req, res, next) => {
 };
 
 module.exports = {
-  updateUser,
+  updateUsername,
   updateProfilePicture,
 };

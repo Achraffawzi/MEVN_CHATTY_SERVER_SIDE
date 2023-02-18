@@ -1,4 +1,6 @@
 const express = require("express");
+const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
 const rateLimit = require("express-rate-limit");
 const cors = require("cors");
 const handleErrors = require("./middlewares/errors.js");
@@ -8,6 +10,21 @@ const app = express();
 
 // Configuration
 require("dotenv").config();
+
+const store = new MongoDBStore({
+  uri: process.env.MONGO_URI || `mongodb://0.0.0.0:27017/chattyDB`,
+  collection: "mySessions",
+});
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store,
+  })
+);
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,

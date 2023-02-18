@@ -6,10 +6,12 @@ const cloudinary = require("../config/cloudinary.js");
 const {
   sendVerificationEmail,
   sendResetPasswordEmail,
+  sendNewEmailVerification,
 } = require("../services/email.js");
 
 const signup = async (req, res, next) => {
   try {
+    console.log(req.body);
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
       throw Errors.BadRequest("Please provide all information");
@@ -119,20 +121,22 @@ const login = async (req, res, next) => {
       "1y"
     );
 
-    const serialized = serialize(
-      "token",
-      { accessToken, refreshToken },
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 60 * 60 * 24,
-        path: "/",
-      }
-    );
-    res.setHeader("Set-Cookie", serialized);
+    req.session.userID = user._id;
 
-    return res.json({ accessToken, refreshToken });
+    // const serialized = serialize(
+    //   "token",
+    //   { accessToken, refreshToken },
+    //   {
+    //     httpOnly: true,
+    //     secure: process.env.NODE_ENV === "production",
+    //     sameSite: "strict",
+    //     maxAge: 60 * 60 * 24,
+    //     path: "/",
+    //   }
+    // );
+    // res.setHeader("Set-Cookie", serialized);
+
+    return res.sendStatus(200);
   } catch (error) {
     next(error);
   }
@@ -204,22 +208,24 @@ const resetPasswordPOST = async (req, res, next) => {
 
 const logout = (req, res, next) => {
   try {
-    const { cookies } = req;
+    // const { cookies } = req;
 
-    const jwt = cookies.token;
+    // const jwt = cookies.token;
 
-    if (!jwt) {
-      throw Errors.Unauthorized("Unauthorized");
-    }
+    // if (!jwt) {
+    //   throw Errors.Unauthorized("Unauthorized");
+    // }
 
-    const serialized = serialize("token", null, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: -1,
-      path: "/",
-    });
-    res.setHeader("Set-Cookie", serialized);
+    // const serialized = serialize("token", null, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: "strict",
+    //   maxAge: -1,
+    //   path: "/",
+    // });
+    // res.setHeader("Set-Cookie", serialized);
+    req.session.destroy();
+    console.log(req.session);
     res.status(200).json({
       message: "Logged out",
     });
@@ -291,10 +297,11 @@ const changeEmailPOST = async (req, res, next) => {
      */
 
     const { email } = req.body;
-    const { id } = req.params;
+    // const { id } = req.params;
+    const id = req.session.userID;
 
     if (!email || !id) {
-      throw Errors.BadRequest("Please provide all information");
+      throw Errors.BadRequest("Please provide new Email");
     }
 
     let user = await User.findOne({ email });
@@ -311,6 +318,26 @@ const changeEmailPOST = async (req, res, next) => {
   }
 };
 
+const changeEmail = async (req, res, next) => {
+  try {
+    const id = req.session.userID;
+
+    let user = await User.findById(id);
+
+    if (!user) {
+      throw Errors.Forbidden("You don't have an account");
+    }
+
+    await sendNewEmailVerification(user);
+
+    return res.json({
+      message: "We've sent you a verification link to your Email",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   signup,
   verifyAccount,
@@ -322,4 +349,5 @@ module.exports = {
   changePassword,
   changeEmailGET,
   changeEmailPOST,
+  changeEmail,
 };
