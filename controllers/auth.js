@@ -90,8 +90,8 @@ const login = async (req, res, next) => {
      * TODO: check if user is verified
      * TODO: create & send token (presave func)
      */
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const { email, password: passcode } = req.body;
+    if (!email || !passcode) {
       throw Errors.BadRequest("Please fill up all required fields");
     }
     let user = await User.findOne({ email });
@@ -100,7 +100,7 @@ const login = async (req, res, next) => {
       throw Errors.NotFound("User with this email doesn't exist");
     }
 
-    if (!user.isValidPassword(password)) {
+    if (!user.isValidPassword(passcode)) {
       throw Errors.Unauthorized("Wrong Password");
     }
 
@@ -122,6 +122,7 @@ const login = async (req, res, next) => {
     );
 
     req.session.userID = user._id;
+    const { password, isVerified, updatedAt, __v, ...others } = user._doc;
 
     // const serialized = serialize(
     //   "token",
@@ -136,7 +137,8 @@ const login = async (req, res, next) => {
     // );
     // res.setHeader("Set-Cookie", serialized);
 
-    return res.sendStatus(200);
+    // return res.redirect(`${process.env.CLIENT_URL}/`);
+    return res.json(others);
   } catch (error) {
     next(error);
   }
@@ -182,6 +184,7 @@ const resetPasswordPOST = async (req, res, next) => {
   try {
     const { password, confirmPassword } = req.body;
     const { id } = req.params;
+    // const id = req.session.userID;
 
     if (!password || !confirmPassword) {
       return res.json({ message: "Please fill up required fields" });
@@ -224,6 +227,7 @@ const logout = (req, res, next) => {
     //   path: "/",
     // });
     // res.setHeader("Set-Cookie", serialized);
+    console.log(`logout session: ${req.session.id}`);
     req.session.destroy();
     console.log(req.session);
     res.status(200).json({
@@ -236,7 +240,8 @@ const logout = (req, res, next) => {
 
 const changePassword = async (req, res, next) => {
   try {
-    const { oldPassword, newPassword, confirmPassword, id } = req.body;
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const id = req.session.userID;
 
     if (!oldPassword || !newPassword || !confirmPassword) {
       throw Errors.BadRequest("please provide the required fields");

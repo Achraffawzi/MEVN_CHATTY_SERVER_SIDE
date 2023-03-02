@@ -24,9 +24,9 @@ router.post("/forgot-password", forgotPassword);
 router.delete("/logout", logout);
 router.put("/change-password", isAuth, changePassword);
 router.post("/change-email", isAuth, changeEmail);
-router.get("/verification/:token", isAuth, verifyAccount);
+router.get("/verification/:token", verifyAccount);
 router.put("/reset-password/:id", resetPasswordPOST);
-router.put("/change-email/:id", isAuth, changeEmailPOST);
+router.put("/change-email", isAuth, changeEmailPOST);
 router.get("/reset-password/:id/:token", resetPasswordGET);
 router.get("/change-email/:id/:token", changeEmailGET);
 
