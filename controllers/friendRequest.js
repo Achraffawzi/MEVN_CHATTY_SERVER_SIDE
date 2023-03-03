@@ -66,7 +66,9 @@ const cancelFriendRequest = async (req, res, next) => {
     if (deletedCount > 0 && acknowledged) {
       return res.json({ message: "Friend request has been cancel" });
     } else {
-      return res.json({ message: "Something bad happened, please try again!" });
+      throw Errors.InternalServerError(
+        "something bad happened, please try again!"
+      );
     }
   } catch (error) {
     next(error);

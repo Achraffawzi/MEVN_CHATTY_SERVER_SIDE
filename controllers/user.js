@@ -1,3 +1,5 @@
+const mongoose = require("mongoose");
+
 const User = require("../models/user.js");
 const Errors = require("../classes/Errors.js");
 
@@ -83,7 +85,52 @@ const updateProfilePicture = async (req, res, next) => {
   }
 };
 
+const unfriend = async (req, res, next) => {
+  try {
+    const currentUser = req.session.userID;
+    const otherUser = req.params;
+
+    if (currentUser === undefined || otherUser === undefined) {
+      throw Errors.BadRequest("Please provide both users to unfriend");
+    }
+
+    if (currentUser.toString() === otherUser.toString()) {
+      throw Error.BadRequest("users must be different");
+    }
+
+    // remove each user from the other user's friends array
+    const { modifiedCount: modifiedCountOne } = await User.updateOne(
+      { _id: mongoose.Types.ObjectId(currentUser) },
+      {
+        $pull: {
+          friends: mongoose.Types.ObjectId(otherUser),
+        },
+      }
+    );
+
+    const { modifiedCount: modifiedCountTwo } = await User.updateOne(
+      { _id: mongoose.Types.ObjectId(otherUser) },
+      {
+        $pull: {
+          friends: mongoose.Types.ObjectId(currentUser),
+        },
+      }
+    );
+
+    if (modifiedCountOne === 1 && modifiedCountTwo === 1) {
+      return res.json({ message: "users have been unfriended" });
+    } else {
+      throw Errors.InternalServerError(
+        "something bad happened, please try again!"
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   updateUsername,
   updateProfilePicture,
+  unfriend,
 };

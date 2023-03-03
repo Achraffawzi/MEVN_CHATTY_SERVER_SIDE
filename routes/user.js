@@ -5,6 +5,7 @@ const router = express.Router();
 const {
   updateUsername,
   updateProfilePicture,
+  unfriend,
 } = require("../controllers/user.js");
 const isAuth = require("../middlewares/isAuth.js");
 
@@ -15,5 +16,6 @@ router.put(
   upload.single("picture"),
   updateProfilePicture
 );
+router.delete("/unfriend/:id", isAuth, unfriend);
 
 module.exports = router;
