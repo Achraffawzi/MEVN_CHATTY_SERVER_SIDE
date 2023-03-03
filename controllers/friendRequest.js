@@ -1,5 +1,6 @@
 const FriendRequest = require("../models/friendRequest.js");
 const Errors = require("../classes/Errors.js");
+const User = require("../models/user.js");
 
 // show details of a specific friend request
 const friendRequestByID = async (req, res, next) => {
@@ -47,8 +48,8 @@ const createFriendRequest = async (req, res, next) => {
   }
 };
 
-// Cancel/refuse a friend request => delete
-const deleteFriendRequest = async (req, res, next) => {
+// Cancel a friend request => delete
+const cancelFriendRequest = async (req, res, next) => {
   try {
     const from = req.session.userID;
     const { to } = req.body;
@@ -63,7 +64,7 @@ const deleteFriendRequest = async (req, res, next) => {
     });
 
     if (deletedCount > 0 && acknowledged) {
-      return res.json({ message: "Friend request has been deleted" });
+      return res.json({ message: "Friend request has been cancel" });
     } else {
       return res.json({ message: "Something bad happened, please try again!" });
     }
@@ -72,21 +73,85 @@ const deleteFriendRequest = async (req, res, next) => {
   }
 };
 
-// cancel an existing friend request or unfriend a user
-exports.delete = (req, res) => {
-  FriendRequest.findByIdAndDelete(req.params.id, (err, friendRequest) => {
-    if (err) {
-      res.status(500).send(err);
-    } else if (!friendRequest) {
-      res.status(404).send("Friend request not found");
-    } else {
-      res.status(204).send();
+// reject a friend request => delete
+const rejectFriendRequest = async (req, res, next) => {
+  try {
+    const { from } = req.body;
+    const to = req.session.userID;
+
+    if (to === undefined || from === undefined) {
+      throw Errors.BadRequest(
+        "Please provide the friend request sender and reciever"
+      );
     }
-  });
+    const { acknowledged, deletedCount } = await FriendRequest.deleteOne({
+      $and: [{ from }, { to }],
+    });
+
+    if (deletedCount > 0 && acknowledged) {
+      return res.json({ message: "Friend request has been rejected" });
+    } else {
+      return res.json({ message: "Something bad happened, please try again!" });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// accept
+const acceptFriendRequest = async (req, res, next) => {
+  try {
+    const { from } = req.body;
+    const to = req.session.userID;
+
+    if (to === undefined || from === undefined) {
+      throw Errors.BadRequest(
+        "Please provide the friend request sender and reciever"
+      );
+    }
+
+    // add friends to friends array
+    await User.updateOne(
+      {
+        _id: to,
+      },
+      {
+        $addToSet: {
+          friends: from,
+        },
+      }
+    );
+
+    await User.updateOne(
+      {
+        _id: from,
+      },
+      {
+        $addToSet: {
+          friends: to,
+        },
+      }
+    );
+
+    // delete friend request
+    const { acknowledged, deletedCount } = await FriendRequest.deleteOne({
+      $and: [{ from }, { to }],
+    });
+
+    if (deletedCount > 0 && acknowledged) {
+      return res.json({ message: "friend request has been accepted" });
+    } else {
+      return res.json({ message: "Something bad happened, please try again!" });
+    }
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
   friendRequestByID,
   createFriendRequest,
-  deleteFriendRequest,
+  cancelFriendRequest,
+  rejectFriendRequest,
+  acceptFriendRequest,
 };
