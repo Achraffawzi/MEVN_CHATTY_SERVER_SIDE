@@ -1,9 +1,106 @@
 const mongoose = require("mongoose");
 
 const User = require("../models/user.js");
+const FriendRequest = require("../models/friendRequest.js");
 const Errors = require("../classes/Errors.js");
 
 const cloudinary = require("../config/cloudinary.js");
+
+const relationships = {
+  friends: "friends",
+  sender: "sender",
+  reciever: "reciever",
+  none: "none",
+  self: "self",
+};
+
+// get the corresponding flag between the two users
+// it can either be: CANCEL / ACCEPT or REJECT
+const getRelationshipFlag = async (currentUserID, otherUser) => {
+  const friendRequest = await FriendRequest.findOne({
+    from: currentUserID,
+    to: otherUser._id,
+  });
+
+  if (friendRequest) {
+    // this means there is a friend request in DB, and waiting to be either Canceled/Accepted or Rejected
+
+    // this means that the sender of this friend request is the same as the current logged in user
+    if (friendRequest.from === mongoose.Types.ObjectId(currentUserID)) {
+      return relationships.sender;
+    }
+
+    // otherwise
+    else {
+      return relationships.reciever;
+    }
+  } else {
+    // this means there is no friend request in DB
+    // => the friend request was either accepted and deleted or never was sent in the first place
+
+    if (otherUser.friends.includes(currentUserID)) {
+      // this means they are friends
+      return relationships.friends;
+    }
+
+    // otherwise
+    else {
+      // check if it's the current logged in user
+      // that means the current logged in user searched for themselves
+      if (mongoose.Types.ObjectId(currentUserID).equals(otherUser._id)) {
+        return relationships.self;
+      }
+      return relationships.none;
+    }
+  }
+};
+
+const getUsersByUsername = async (req, res, next) => {
+  try {
+    const { usernameQuery } = req.query;
+    const currentUserID = req.session.userID;
+
+    const usernameRegex = new RegExp(`^${usernameQuery}`);
+
+    // get all the users from DB that contains the usernameQuery letter(s)
+    // const users = await User.find({ $text: { $search: usernameQuery } });
+    const users = await User.find({ username: usernameRegex });
+
+    // map through each user and get their relationship with the current logged in user
+    // let relationship;
+    const result = await Promise.all(
+      users.map(async (user) => {
+        const {
+          password,
+          isVerified,
+          updatedAt,
+          __v,
+          email,
+          friends,
+          lastOnline,
+          createdAt,
+          ...others
+        } = user._doc;
+
+        let relationship = "";
+
+        const data = await getRelationshipFlag(currentUserID, user);
+        if (data) {
+          relationship = data;
+        }
+
+        return {
+          ...others,
+          relationship,
+        };
+      })
+    );
+
+    console.log(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const updateUsername = async (req, res, next) => {
   /**
@@ -130,6 +227,7 @@ const unfriend = async (req, res, next) => {
 };
 
 module.exports = {
+  getUsersByUsername,
   updateUsername,
   updateProfilePicture,
   unfriend,

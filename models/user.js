@@ -40,6 +40,8 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// userSchema.index({ username: "text" });
+
 userSchema.pre("save", function () {
   if (this.isModified("password") && this.password !== "") {
     console.log("password changed");
