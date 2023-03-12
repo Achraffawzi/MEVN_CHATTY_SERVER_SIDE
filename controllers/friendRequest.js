@@ -26,8 +26,6 @@ const createFriendRequest = async (req, res, next) => {
     const { to } = req.body;
 
     if (!to || !from) {
-      console.log(from);
-      console.log(to);
       throw Errors.BadRequest(
         "no information provided about the sender and the reciever"
       );

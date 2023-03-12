@@ -18,8 +18,10 @@ const relationships = {
 // it can either be: CANCEL / ACCEPT or REJECT
 const getRelationshipFlag = async (currentUserID, otherUser) => {
   const friendRequest = await FriendRequest.findOne({
-    from: currentUserID,
-    to: otherUser._id,
+    $or: [
+      { from: currentUserID, to: otherUser._id },
+      { from: otherUser._id, to: currentUserID },
+    ],
   });
 
   if (friendRequest) {
@@ -96,7 +98,7 @@ const getUsersByUsername = async (req, res, next) => {
       })
     );
 
-    console.log(result);
+    res.json(result);
   } catch (error) {
     next(error);
   }

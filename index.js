@@ -22,6 +22,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
   })
 );
 
@@ -36,6 +41,7 @@ const limiter = rateLimit({
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:3000",
+    credentials: true,
   })
 );
 app.use(express.json());
