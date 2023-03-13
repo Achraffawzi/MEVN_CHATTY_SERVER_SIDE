@@ -10,6 +10,13 @@ const getChatsByUser = async (req, res, next) => {
       participants: {
         $in: [currentUserID],
       },
+    }).populate({
+      path: "participants",
+      select: "picture username",
+      options: {
+        skip: 0,
+        limit: 1,
+      },
     });
 
     return res.json(chats);
@@ -37,7 +44,7 @@ const createChat = async (req, res, next) => {
 
     const newChat = await chat.save();
 
-    res.json(newChat);
+    return res.json(newChat);
   } catch (error) {
     next(error);
   }
