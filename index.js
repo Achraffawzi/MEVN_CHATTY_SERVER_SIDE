@@ -51,6 +51,7 @@ app.use(express.urlencoded({ extends: true }));
 app.use("/api/auth", require("./routes/auth.js"));
 app.use("/api/users", require("./routes/user.js"));
 app.use("/api/friend-request", require("./routes/friendRequest.js"));
+app.use("/api/chats", require("./routes/chat.js"));
 
 // error middleware
 app.use(handleErrors);
