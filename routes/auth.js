@@ -21,7 +21,7 @@ const upload = require("../config/multer.js");
 router.post("/signup", upload.single("picture"), signup);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
-router.delete("/logout", logout);
+router.delete("/logout", isAuth, logout);
 router.put("/change-password", isAuth, changePassword);
 router.post("/change-email", isAuth, changeEmail);
 router.get("/verification/:token", verifyAccount);

@@ -1,4 +1,5 @@
 const express = require("express");
+const socket = require("socket.io");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const rateLimit = require("express-rate-limit");
@@ -7,6 +8,16 @@ const handleErrors = require("./middlewares/errors.js");
 const connectDB = require("./config/db.js");
 
 const app = express();
+const server = require("http").createServer(app);
+const io = socket(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("a new socket joined" + socket.id);
+});
 
 // Configuration
 require("dotenv").config();
@@ -52,6 +63,7 @@ app.use("/api/auth", require("./routes/auth.js"));
 app.use("/api/users", require("./routes/user.js"));
 app.use("/api/friend-request", require("./routes/friendRequest.js"));
 app.use("/api/chats", require("./routes/chat.js"));
+app.use("/api/messages", require("./routes/message.js"));
 
 // error middleware
 app.use(handleErrors);
@@ -63,7 +75,7 @@ const startServer = () => {
   connectDB() // returns undefined
     .then((msg) => {
       console.log(msg);
-      app.listen(port, () => {
+      server.listen(port, () => {
         console.log(`Server running on port ${port}`);
       });
     })

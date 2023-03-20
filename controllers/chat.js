@@ -7,17 +7,28 @@ const getChatsByUser = async (req, res, next) => {
     const currentUserID = req.session.userID;
 
     const chats = await Chat.find({
-      participants: {
-        $in: [currentUserID],
-      },
-    }).populate({
-      path: "participants",
-      select: "picture username",
-      options: {
-        skip: 0,
-        limit: 1,
-      },
-    });
+      $and: [
+        {
+          participants: {
+            $in: [currentUserID],
+          },
+        },
+        {
+          lastMessage: {
+            $exists: true,
+          },
+        },
+      ],
+    })
+      .populate({
+        path: "participants",
+        select: "picture username",
+        options: {
+          skip: 0,
+          limit: 1,
+        },
+      })
+      .select("_id participants lastMessage lastMessageDate createdAt");
 
     return res.json(chats);
   } catch (error) {

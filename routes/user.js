@@ -13,7 +13,7 @@ const isAuth = require("../middlewares/isAuth.js");
 router.get("/", isAuth, getUsersByUsername);
 router.put("/update", isAuth, updateUsername);
 router.put(
-  "/update-profile-picture/:id",
+  "/update-profile-picture",
   isAuth,
   upload.single("picture"),
   updateProfilePicture

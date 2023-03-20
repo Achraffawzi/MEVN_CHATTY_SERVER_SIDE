@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Chat = require("./chats");
+const Chat = require("./chat.js");
 
 const messageSchema = new mongoose.Schema(
   {
@@ -11,9 +11,10 @@ const messageSchema = new mongoose.Schema(
 );
 
 // set this message to lastMessage in chat model after save
-MessageSchema.post("save", async function () {
+messageSchema.post("save", async function () {
   const chat = await Chat.findById(this.chatID);
-  chat.lastMessage = this.text;
+  chat.lastMessage = this.content;
+  chat.lastMessageDate = new Date();
   await chat.save();
 });
 

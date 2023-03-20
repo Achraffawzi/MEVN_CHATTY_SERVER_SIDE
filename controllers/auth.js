@@ -227,9 +227,9 @@ const logout = (req, res, next) => {
     //   path: "/",
     // });
     // res.setHeader("Set-Cookie", serialized);
-    console.log(`logout session: ${req.session._id}`);
+    // console.log(`logout session: ${req.session._id}`);
+    // req.session.userID = null,
     req.session.destroy();
-    console.log(req.session);
     res.status(200).json({
       message: "Logged out",
     });
